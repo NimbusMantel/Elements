@@ -8,28 +8,33 @@ typedef unsigned long	uint64_t;
 
 // Macros
 
-/*KER_EXC_BEG*/
-#define OpenCLDebug 0
-/*KER_EXC_END*/
+/*KER_EXC_BEG*/#define OpenCLDebug 0/*KER_EXC_END*/
 
-// Enum declarations
+// Placeholder declarations
 
-enum ELEMENT {
-	ELE_NULL  = 0,
-	ELE_AIR   = 1,
-	ELE_EARTH = 2,
-	ELE_FIRE  = 3,
-	ELE_WATER = 4
+/*KER_ELE_BEG*/enum ELE_ENM {
+	ELE_NULL, ELE_AIR, ELE_EARTH, ELE_FIRE, ELE_WATER = 4
 };
 
-// Struct declarations
+struct Element {
+	float   den;
+	uint8_t ela;
+	uint8_t mad;
+	uint8_t red;
+	uint8_t los;
+};
+
+struct Interact {
+	uint8_t itr;
+	uint8_t des;
+};
 
 struct Cell {
-	enum ELEMENT ele;
+	enum ELE_ENM ele;
 	uint8_t      amt;
 	uint8_t      msk;
 	float3       vel;
-};
+};/*KER_ELE_END*/
 
 // Function declarations
 
@@ -56,13 +61,31 @@ kernel void testKernel() {
 	printf("\n");
 }
 
+kernel void actKernel(read_only image2d_t inp, write_only image2d_t oup, constant uint32_t* ele, constant uint16_t* act, int2 stp, uint16_t siz) {
+	const struct Element elements[4] = {
+		{ as_float(ele[0x00]), ele[0x01] },
+		{ as_float(ele[0x02]), ele[0x03] },
+		{ as_float(ele[0x04]), ele[0x05] },
+		{ as_float(ele[0x06]), ele[0x07] }
+	};
+
+	const struct Interact interacts[4][4] = {
+		{ { act[0x00] }, { act[0x01] }, { act[0x02] }, { act[0x03] } },
+		{ { act[0x04] }, { act[0x05] }, { act[0x06] }, { act[0x07] } },
+		{ { act[0x08] }, { act[0x09] }, { act[0x0A] }, { act[0x0B] } },
+		{ { act[0x0C] }, { act[0x0D] }, { act[0x0E] }, { act[0x0F] } }
+	};
+}
+
+kernel void losKernel(read_only image2d_t inp, write_only image2d_t oup, constant uint32_t* ele, int2 stp, uint16_t siz);
+
 // Function definitions
 
 inline struct Cell loadCell(const float4 m) {
 	uint32_t v = as_uint(m.x);
 	v = (((v & 0x80000000) >> 16) | (((v & 0x7F800000) - 0x38000000) >> 13) | ((v & 0x007FE000) >> 13));
 
-	struct Cell c = { ((((v & 0x0000C000) >> 14) + 1) & -(bool)(v & 0x00003FC0)), (v & 0x00003FC0) >> 6, v & 0x0000003F, m.yzw };
+	struct Cell c = { ((((v & 0x0000C000) >> 14) + 1) & -(bool)(v & 0x00003FFF)), (v & 0x00003FC0) >> 6, v & 0x0000003F, m.yzw };
 
 	return c;
 }

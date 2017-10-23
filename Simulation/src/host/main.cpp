@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "host/elements.hpp"
+
 #define OpenCLDebug 0
 
 bool HOST_BIG_ENDIAN, DEVICE_BIG_ENDIAN;
@@ -34,6 +36,11 @@ int main(int argc, char* argv[]) {
 
 	cl::Context clContext = cl::Context(device);
 
+	// Initialize the OpenCL buffers
+	
+	cl::Buffer eleBuffer = cl::Buffer(clContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(Element) * 4, (Element*)(&ELEMENTS));
+	cl::Buffer actBuffer = cl::Buffer(clContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(Interact) * 4 * 4, (Interact*)(&INTERACT));
+
 	// Compile the OpenCL code with a macroprocessor
 
 	std::ifstream strm("src/kernel/kernel.cl");
@@ -45,6 +52,11 @@ int main(int argc, char* argv[]) {
 		kstr.replace(kstr.find("/*KER_EXC_BEG*/"), kstr.find("/*KER_EXC_END*/") - kstr.find("/*KER_EXC_BEG*/") + 15, rstr);
 	}
 	
+	strm = std::ifstream("src/host/elements.hpp");
+	rstr = std::string(std::istreambuf_iterator<char>(strm), (std::istreambuf_iterator<char>()));
+	rstr = rstr.substr(rstr.find("/*KER_ELE_BEG*/") + 15, rstr.find("/*KER_ELE_END*/") - rstr.find("/*KER_ELE_BEG*/") - 15);
+	kstr.replace(kstr.find("/*KER_ELE_BEG*/"), kstr.find("/*KER_ELE_END*/") - kstr.find("/*KER_ELE_BEG*/") + 15, rstr);
+	
 	cl::Program::Sources sources = cl::Program::Sources(1, std::make_pair(kstr.c_str(), kstr.length() + 1));
 
 	cl::Program clProgram(clContext, sources);
@@ -53,9 +65,16 @@ int main(int argc, char* argv[]) {
 	sprintf_s(clBuild, 31, "-cl-std=CL1.2 -D OpenCLDebug=%u", (bool)OpenCLDebug);
 	clProgram.build(clBuild);
 
-	// Initialize an OpenCL test kernel
+	// Initialize the OpenCL kernels
 
 	cl::Kernel testKernel = cl::Kernel(clProgram, "testKernel");
+
+	cl::Kernel actKernel = cl::Kernel(clProgram, "actKernel");
+	actKernel.setArg(2, eleBuffer);
+	actKernel.setArg(3, actBuffer);
+
+	cl::Kernel losKernel = cl::Kernel(clProgram, "losKernel");
+	losKernel.setArg(2, eleBuffer);
 
 	// Initialize an OpenCL command queue
 	
