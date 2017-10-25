@@ -37,9 +37,13 @@ int main(int argc, char* argv[]) {
 	cl::Context clContext = cl::Context(device);
 
 	// Initialize the OpenCL buffers
-	
+
 	cl::Buffer eleBuffer = cl::Buffer(clContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(Element) * 4, (Element*)(&ELEMENTS));
 	cl::Buffer actBuffer = cl::Buffer(clContext, CL_MEM_READ_ONLY | CL_MEM_USE_HOST_PTR, sizeof(Interact) * 4 * 4, (Interact*)(&INTERACT));
+	
+	cl::Image2D celImage = cl::Image2D(clContext, CL_MEM_READ_WRITE, { CL_RGBA, CL_HALF_FLOAT }, width, height);
+
+	cl::Buffer objBuffer = cl::Buffer(clContext, CL_MEM_READ_WRITE | CL_MEM_HOST_READ_ONLY, 16 * 4 * 64);
 
 	// Compile the OpenCL code with a macroprocessor
 
@@ -67,22 +71,49 @@ int main(int argc, char* argv[]) {
 
 	// Initialize the OpenCL kernels
 
-	cl::Kernel testKernel = cl::Kernel(clProgram, "testKernel");
-
 	cl::Kernel actKernel = cl::Kernel(clProgram, "actKernel");
+	actKernel.setArg(0, celImage);
+	actKernel.setArg(1, celImage);
 	actKernel.setArg(2, eleBuffer);
 	actKernel.setArg(3, actBuffer);
 
-	cl::Kernel losKernel = cl::Kernel(clProgram, "losKernel");
-	losKernel.setArg(2, eleBuffer);
+	cl::Kernel datKernel = cl::Kernel(clProgram, "datKernel");
+	datKernel.setArg(0, celImage);
+	datKernel.setArg(1, celImage);
+	datKernel.setArg(2, eleBuffer);
+	datKernel.setArg(3, objBuffer);
+
+	cl::Kernel setKernel = cl::Kernel(clProgram, "setKernel");
+	setKernel.setArg(0, celImage);
+	setKernel.setArg(1, celImage);
+
+	cl::Kernel objKernel = cl::Kernel(clProgram, "objKernel");
+	objKernel.setArg(0, celImage);
+	objKernel.setArg(1, celImage);
+	objKernel.setArg(2, objBuffer);
+
+	cl::Kernel movKernel = cl::Kernel(clProgram, "movKernel");
+	movKernel.setArg(0, celImage);
+	movKernel.setArg(1, celImage);
+	movKernel.setArg(2, objBuffer);
+
+	cl::Kernel scaKernel = cl::Kernel(clProgram, "scaKernel");
+	scaKernel.setArg(0, celImage);
+	scaKernel.setArg(1, celImage);
+	scaKernel.setArg(2, objBuffer);
+
+	cl::Kernel ubdKernel = cl::Kernel(clProgram, "ubdKernel");
+	ubdKernel.setArg(0, celImage);
+	ubdKernel.setArg(1, celImage);
+	ubdKernel.setArg(2, objBuffer);
+
+	cl::Kernel rdsKernel = cl::Kernel(clProgram, "rdsKernel");
+	rdsKernel.setArg(0, celImage);
+	rdsKernel.setArg(1, celImage);
 
 	// Initialize an OpenCL command queue
 	
 	cl::CommandQueue clQueue = cl::CommandQueue(clContext, device);
-
-	// Enqueue the test kernel
-
-	clQueue.enqueueTask(testKernel);
 
 	// Wait for user input, then exit program
 
