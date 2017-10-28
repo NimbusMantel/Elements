@@ -18,6 +18,9 @@
     <ClCompile Include="src\host\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\host\elements.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Intel_OpenCL_Build_Rules Include="src\kernel\kernel.cl">

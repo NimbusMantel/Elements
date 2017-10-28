@@ -183,6 +183,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\host\elements.cpp" />
     <ClCompile Include="src\host\main.cpp" />
   </ItemGroup>
   <ItemGroup>
