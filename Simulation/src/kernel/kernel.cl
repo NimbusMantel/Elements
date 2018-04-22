@@ -1,5 +1,6 @@
 // Typedefs
 
+typedef signed   char   int8_t;
 typedef unsigned char	uint8_t;
 typedef unsigned short	uint16_t;
 typedef unsigned int	uint32_t;
@@ -22,11 +23,11 @@ enum ELE_ENM { ELE_AIR, ELE_EARTH, ELE_FIRE, ELE_WATER };
 
 struct Element { float den; uint8_t ela; uint8_t mxd; uint8_t red; uint8_t los; };
 
-struct Interact { uint8_t itr; uint8_t des; };
+struct Interact { uint8_t itr; uint8_t des; int8_t bal; uint8_t msk; };
 
-struct Cell { enum ELE_ENM ele; bool  sim; uint8_t msk; uint8_t amt; float3 vel; }; /*Stored in memory as ele(2), amt(8), msk(6), vel(48)*/
+struct Cell { enum ELE_ENM ele; bool sim; uint8_t msk; uint8_t amt; float3 vel; }; /*Stored in memory as ele(2), amt(8), msk(6), vel(48)*/
 
-struct Object { enum ELE_ENM ele; uint8_t msk; short2 pos; uint32_t mas; float2 cen; }; /*Stored in memory as pos(32), mas(32), dis(64)*/
+struct Object { enum ELE_ENM ele; uint8_t msk; ushort2 pos; uint32_t mas; float2 cen; }; /*Stored in memory as pos(32), mas(32), dis(64)*/
 
 /*KER_ELE_END*/
 
@@ -37,7 +38,7 @@ float4 storeCell(const struct Cell cel);
 
 // Kernels
 
-kernel void actKernel(read_only image2d_t inp, write_only image2d_t oup, constant read_only uint32_t* ele, constant read_only uint16_t* act, short2 stp, uint16_t siz) {
+kernel void actKernel(read_only image2d_t inp, write_only image2d_t oup, write_only image2d_t upd, constant read_only uint32_t* ele, constant read_only uint32_t* act, short2 stp, uint16_t siz) {
 	const struct Element elements[4] = ELEMENTS(ele);
 	const struct Interact interacts[4][4] = INTERACTS(act);
 
